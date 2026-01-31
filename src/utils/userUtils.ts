@@ -1,4 +1,4 @@
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 
 /**
  * Check if a string is a valid UUID format

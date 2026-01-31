@@ -1,5 +1,5 @@
 import { advancedContractService } from './advancedContracts';
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 // Removed blockchain import - using centralized storage only
 // This file is deprecated. All blockchain/oracle logic removed. Use Supabase for all storage and logic.

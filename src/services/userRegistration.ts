@@ -1,5 +1,6 @@
-import { supabase } from './supabase';
-import EnhancedSupabaseService from './enhancedSupabase';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+// import { enhancedSupabaseService } from './enhancedSupabase.js';
 import { advancedContractService } from './advancedContracts';
 import { toast } from 'react-hot-toast';
 
@@ -94,7 +95,12 @@ class UserRegistrationService {
 
       let supabaseRecord;
       try {
-        supabaseRecord = await EnhancedSupabaseService.createUser(supabaseUserData);
+        const { data: createResult, error: createError } = await supabase
+          .from('users')
+          .insert([supabaseUserData])
+          .select()
+          .single();
+        supabaseRecord = { success: !createError, data: createResult, error: createError?.message };
       } catch (enhancedError: any) {
         // If enhanced service fails, try direct upsert
         console.warn('Enhanced service failed, trying direct upsert:', enhancedError.message);
@@ -159,7 +165,12 @@ class UserRegistrationService {
   // Get user by wallet address from Supabase
   async getUserByWallet(walletAddress: string): Promise<any> {
     try {
-      return await EnhancedSupabaseService.getUserByWallet(walletAddress);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .single();
+      return { success: !error, data: data || null, error: error?.message };
     } catch (error) {
       console.error('Enhanced service failed, trying direct query:', error);
       

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { supabase, createRealtimeSubscription } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 
 // Basic threaded comments implementation using Supabase
 // - Fetches top-level comments for a project
@@ -41,7 +41,13 @@ const ProjectComments: React.FC<{ projectId: string }> = ({ projectId }) => {
     fetchComments();
 
     // subscribe to new comments for this project
-    const sub = createRealtimeSubscription('comments', (payload: any) => {
+    const sub = supabase
+      .channel('public:comments')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'comments' 
+      }, (payload: any) => {
       try {
         const newRecord = payload.new;
         if (!newRecord || newRecord.project_id !== projectId) return;
@@ -49,11 +55,12 @@ const ProjectComments: React.FC<{ projectId: string }> = ({ projectId }) => {
       } catch (e) {
         // ignore
       }
-    }, `project_id=eq.${projectId}`);
+    })
+    .subscribe();
 
     return () => {
       mounted.current = false;
-      try { sub?.unsubscribe(); } catch (e) { /* ignore */ }
+      try { supabase.removeChannel(sub); } catch (e) { /* ignore */ }
     };
   }, [projectId]);
 

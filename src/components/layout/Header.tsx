@@ -14,7 +14,6 @@ import {
   UsersIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
-import AuthModal from '../auth/AuthModal';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -22,17 +21,14 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showSearch, setShowSearch] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
-    setAuthMode(mode);
-    setShowAuthModal(true);
+    navigate(`/${mode}`);
   };
 
   const navigationItems = [
@@ -176,17 +172,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
                       onClick={() => setShowUserMenu(!showUserMenu)}
                       className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-800 transition-colors duration-200"
                     >
-                      {user?.avatarUrl ? (
+                      {user?.user_metadata?.avatar_url ? (
                         <img
-                          src={user.avatarUrl}
-                          alt={user.name}
+                          src={user.user_metadata.avatar_url}
+                          alt={user.user_metadata?.full_name || user.email}
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
                         <UserCircleIcon className="h-8 w-8 text-gray-300" />
                       )}
                       <span className="hidden sm:block font-medium text-white">
-                        {user?.name?.split(' ')[0] || user?.walletAddress?.slice(0, 6)}
+                        {user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0]}
                       </span>
                     </motion.button>
 
@@ -200,8 +196,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
                       >
                         <div className="py-2">
                           <div className="px-4 py-2 border-b border-gray-700">
-                            <p className="font-medium text-white">{user?.name}</p>
-                            <p className="text-sm text-gray-400">@{user?.walletAddress?.slice(0, 8)}...</p>
+                            <p className="font-medium text-white">{user?.user_metadata?.full_name || user?.email}</p>
+                            <p className="text-sm text-gray-400">{user?.email}</p>
                           </div>
                           <button 
                             type="button" 
@@ -235,7 +231,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
                           </button>
                           <div className="border-t border-gray-700 mt-2">
                             <button
-                              onClick={logout}
+                              onClick={signOut}
                               className="block w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors duration-200 text-red-400"
                             >
                               Sign Out
@@ -289,13 +285,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
           )}
         </div>
       </motion.header>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        initialMode={authMode}
-      />
 
       {/* Click outside to close user menu */}
       {showUserMenu && (

@@ -43,9 +43,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const filteredChats = chats.filter(chat =>
+  const filteredChats = chats.filter((chat: any) =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.participants.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()))
+    chat.participants.some((p: string) => p.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const activeMessages = activeChat ? messages[activeChat.id] || [] : [];
@@ -59,8 +59,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      sendMessage(messageInput);
+    if (messageInput.trim() && activeChat) {
+      sendMessage(activeChat.id, messageInput);
       setMessageInput('');
       if (inputRef.current) {
         inputRef.current.style.height = 'auto';
@@ -154,7 +154,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
 
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto">
-            {filteredChats.map((chat) => {
+            {filteredChats.map((chat: any) => {
               const lastMessage = getLastMessage(chat);
               return (
                 <motion.button
@@ -170,7 +170,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
                         alt={chat.name}
                         className="w-12 h-12 rounded-full object-cover"
                       />
-                      {chat.type === 'direct' && chat.participants.some(p => isUserOnline(p)) && (
+                      {chat.type === 'direct' && chat.participants.some((p: string) => isUserOnline(p)) && (
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-secondary-900 rounded-full" />
                       )}
                     </div>
@@ -242,7 +242,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center space-x-1">
                     {activeChat.type === 'direct' ? (
                       <span className="text-xs text-secondary-400">
-                        {isUserOnline(activeChat.participants.find(p => p !== 'user-1') || '') ? 'Online' : 'Offline'}
+                        {isUserOnline(activeChat.participants.find((p: string) => p !== 'user-1') || '') ? 'Online' : 'Offline'}
                       </span>
                     ) : (
                       <span className="text-xs text-secondary-400">
@@ -268,7 +268,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-3 space-y-4">
               <AnimatePresence>
-                {activeMessages.map((message, index) => {
+                {activeMessages.map((message: any, index: number) => {
                   const isOwn = message.senderId === 'user-1';
                   const showAvatar = !isOwn && (index === 0 || activeMessages[index - 1].senderId !== message.senderId);
                   
@@ -315,7 +315,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
                                   className="bg-secondary-600 hover:bg-secondary-500 rounded-full px-2 py-1 text-xs flex items-center space-x-1"
                                 >
                                   <span>{emoji}</span>
-                                  <span>{users.length}</span>
+                                  <span>{(users as string[]).length}</span>
                                 </motion.button>
                               ))}
                             </div>

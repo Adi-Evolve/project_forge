@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
+import { centralizedProjectService } from '../services/centralizedProjectService';
+import { DebugService } from '../services/debugService';
 
 const categories = [
   'AI/ML', 'Web Development', 'Mobile Apps', 'IoT', 'Gaming', 'DevTools', 
@@ -121,30 +123,52 @@ const CreateProjectPage: React.FC = () => {
       return;
     }
 
+    console.log('🔍 Current user:', { id: user.id, email: user.email });
+
     setIsSubmitting(true);
     try {
+      // First ensure the user exists in the database
+      console.log('👤 Ensuring user exists in database...');
+      const dbUser = await DebugService.ensureUserInDatabase(user);
+      if (!dbUser) {
+        throw new Error('Failed to ensure user exists in database');
+      }
+
       const projectData = {
         ...formData,
         creatorId: user.id || 'anonymous',
         creatorName: user.email || 'Anonymous',
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        status: 'active' as const,
+        fundingGoal: parseFloat(formData.fundingGoal) || 0,
+        currentFunding: 0,
+        views: 0,
+        likes: 0,
+        supporters: [],
+        comments: 0
       };
 
-      console.log('Project data:', projectData);
+      console.log('📊 Creating project with data:', projectData);
 
-      // Simulate project creation
-      toast.loading('Creating project...');
-      setTimeout(() => {
-        toast.dismiss();
-        toast.success('🎉 Project created successfully!');
+      // Actually save the project using the centralized project service
+      const result = await centralizedProjectService.saveProject(projectData);
+
+      console.log('💾 Project save result:', result);
+
+      if (result.success) {
+        if (result.supabaseId) {
+          toast.success('🎉 Project created and saved to database!');
+        } else {
+          toast.success('🎉 Project created locally! Database sync may have failed but project is saved.');
+        }
+        console.log('Project created with ID:', result.project?.id, 'Supabase ID:', result.supabaseId);
         navigate('/projects');
-      }, 2000);
+      } else {
+        throw new Error(result.error || 'Failed to create project');
+      }
 
     } catch (error) {
       console.error('Error creating project:', error);
-      toast.error('Failed to create project');
+      toast.error('Failed to create project: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }

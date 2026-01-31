@@ -1,5 +1,5 @@
 // Enhanced user verification service with document management
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { ipfsStorageService, DocumentMetadata } from './ipfsStorage';
 
 export type UserVerificationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';

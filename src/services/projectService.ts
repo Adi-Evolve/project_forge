@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { localStorageService, StoredProject } from './localStorage';
 import { toast } from 'react-hot-toast';
 

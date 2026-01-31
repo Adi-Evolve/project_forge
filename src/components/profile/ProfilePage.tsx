@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { createNotification } from '../../services/integrations';
 import toast from 'react-hot-toast';
@@ -11,7 +11,7 @@ type UserProfile = {
   wallet_address?: string;
 };
 
-const ProfilePage: React.FC = () => {
+const ProfilePage = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editing, setEditing] = useState(false);

@@ -15,7 +15,7 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface User {
   id: string;

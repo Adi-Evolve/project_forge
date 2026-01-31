@@ -118,7 +118,7 @@ const SettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
-              defaultValue={user?.fullName || user?.name}
+              defaultValue={user?.user_metadata?.full_name || user?.email}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
@@ -138,7 +138,7 @@ const SettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
-              defaultValue={user?.username}
+              defaultValue={user?.user_metadata?.username}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
@@ -159,7 +159,7 @@ const SettingsPage: React.FC = () => {
           </label>
           <textarea
             rows={4}
-            defaultValue={user?.bio}
+            defaultValue={user?.user_metadata?.bio}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             placeholder="Tell others about yourself..."
           />

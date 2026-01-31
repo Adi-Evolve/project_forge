@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import SkillEndorsements from '../components/community/SkillEndorsements';
 import ReputationBadge from '../components/reputation/ReputationBadge';
 import FeedbackForm from '../components/feedback/FeedbackForm';

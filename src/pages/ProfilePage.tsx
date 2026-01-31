@@ -41,10 +41,10 @@ import {
 } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { supabase, STORAGE_BUCKETS } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import { logAction } from '../services/auditLogs';
 import { createNotification } from '../services/integrations';
-import GoogleDriveService from '../services/googleDriveService';
+import { imgbbService } from '../services/imgbbService';
 
 // Reviewer Application Modal
 const ReviewerModal: React.FC<{
@@ -87,7 +87,7 @@ const ReviewerModal: React.FC<{
   );
 };
 
-const ProfilePage: React.FC = () => {
+const ProfilePage = () => {
   const { user: currentUser, updateUser } = useAuth();
   
   // State management
@@ -164,7 +164,7 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Uploading avatar...');
       
-      // Upload to Google Drive (placeholder implementation)
+      // Upload to ImgBB cloud storage
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.dismiss();
@@ -179,7 +179,7 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Uploading cover photo...');
       
-      // Upload to Google Drive (placeholder implementation)
+      // Upload to ImgBB cloud storage
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.dismiss();
@@ -270,10 +270,10 @@ const ProfilePage: React.FC = () => {
 
   const handleStartEditing = () => {
     setFormData({
-      fullName: currentUser?.fullName || currentUser?.name || userData?.full_name || '',
-      username: currentUser?.username || userData?.username || '',
+      fullName: currentUser?.user_metadata?.full_name || userData?.full_name || '',
+      username: currentUser?.user_metadata?.username || userData?.username || '',
       email: currentUser?.email || userData?.email || '',
-      bio: currentUser?.bio || userData?.bio || '',
+      bio: currentUser?.user_metadata?.bio || userData?.bio || '',
       website: userData?.website || '',
       location: userData?.location || '',
       company: userData?.role || '',
@@ -355,7 +355,7 @@ const ProfilePage: React.FC = () => {
               {/* Avatar */}
               <div className="relative mb-4 sm:mb-0 sm:mr-6">
                 <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white text-3xl font-bold">
-                  {currentUser?.name?.[0] || currentUser?.email?.[0] || 'U'}
+                  {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0] || 'U'}
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -377,10 +377,10 @@ const ProfilePage: React.FC = () => {
 
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-secondary-900 mb-2">
-                  {userData?.full_name || currentUser?.name || 'User Profile'}
+                  {userData?.full_name || currentUser?.user_metadata?.full_name || 'User Profile'}
                 </h1>
                 <p className="text-secondary-600 mb-2">
-                  @{userData?.username || currentUser?.username || 'username'}
+                  @{userData?.username || currentUser?.user_metadata?.username || 'username'}
                 </p>
                 <p className="text-secondary-700">
                   {userData?.bio || 'No bio available'}

@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { errorHandler } from './errorHandler';
 
 /**

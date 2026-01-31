@@ -98,9 +98,9 @@ const VerificationPage: React.FC = () => {
           {/* User Verification Form */}
           {(!isAdmin || activeTab === 'user') && (
             <UserVerificationForm
-              userId={user.walletAddress || user.id || ''}
-              userEmail={user.email}
-              userName={user.name}
+              userId={user.user_metadata?.wallet_address || user.id || ''}
+              userEmail={user.email || ''}
+              userName={user.user_metadata?.full_name}
               onVerificationSubmitted={(success, message) => {
                 if (success) {
                   console.log('Verification submitted successfully:', message);
@@ -114,7 +114,7 @@ const VerificationPage: React.FC = () => {
           {/* Admin Dashboard */}
           {isAdmin && activeTab === 'admin' && (
             <AdminVerificationDashboard
-              adminId={user.walletAddress || user.id || ''}
+              adminId={user.user_metadata?.wallet_address || user.id || ''}
             />
           )}
         </div>

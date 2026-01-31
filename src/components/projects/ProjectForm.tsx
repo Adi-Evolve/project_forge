@@ -144,7 +144,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onClose, onSuccess }) => {
           const result = await ipfsService.uploadFile(file, {
             name: file.name,
             type: 'project_image',
-            uploadedBy: user.walletAddress || user.id || ''
+            uploadedBy: user.user_metadata?.wallet_address || user.id || ''
           });
           if (result.success && result.ipfsHash) {
             imageUrls.push(ipfsService.getFileUrl(result.ipfsHash));

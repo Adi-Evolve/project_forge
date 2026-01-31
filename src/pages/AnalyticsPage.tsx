@@ -18,7 +18,7 @@ import {
   ComputerDesktopIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
-import supabase, { supabase as supabaseClient } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 
 interface AnalyticsData {
   overview: {
@@ -115,7 +115,7 @@ const AnalyticsPage: React.FC = () => {
         }
 
         // Total views/likes/projects for the user's projects
-        const { data: projects } = await supabaseClient
+        const { data: projects } = await supabase
           .from('projects')
           .select('id,title,views,likes,cover_image')
           .eq('creator_id', user.id);
@@ -127,7 +127,7 @@ const AnalyticsPage: React.FC = () => {
         // Followers: if a followers table exists
         let totalFollowers = 0;
         try {
-          const { count } = await supabaseClient
+          const { count } = await supabase
             .from('user_followers')
             .select('*', { count: 'exact' })
             .eq('followed_user_id', user.id);

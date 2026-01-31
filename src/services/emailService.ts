@@ -1,5 +1,5 @@
 import emailjs from '@emailjs/browser';
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { advancedContractService } from './advancedContracts';
 import { ipfsStorageService } from './ipfsStorage';
 

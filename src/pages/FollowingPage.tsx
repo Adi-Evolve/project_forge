@@ -17,7 +17,7 @@ import {
   ListBulletIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { getPrimaryImage } from '../utils/image';
 import { toast } from 'react-hot-toast';

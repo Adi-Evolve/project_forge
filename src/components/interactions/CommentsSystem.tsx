@@ -172,11 +172,11 @@ const CommentsSystem: React.FC<CommentsSystemProps> = ({
       id: Date.now().toString(),
       content: newComment,
       author: {
-        id: user!.walletAddress || user!.id || '',
-        username: user!.walletAddress?.slice(0, 8) + '...' || user!.username || '',
-        fullName: user!.name || user!.fullName || '',
-        avatar: user!.avatarUrl,
-        verified: user!.isVerified
+        id: user!.user_metadata?.wallet_address || user!.id || '',
+        username: user!.user_metadata?.wallet_address?.slice(0, 8) + '...' || user!.user_metadata?.username || '',
+        fullName: user!.user_metadata?.full_name || '',
+        avatar: user!.user_metadata?.avatar_url,
+        verified: user!.user_metadata?.is_verified
       },
       replies: [],
       likes: 0,
@@ -198,11 +198,11 @@ const CommentsSystem: React.FC<CommentsSystemProps> = ({
       id: Date.now().toString(),
       content: replyContent,
       author: {
-        id: user!.walletAddress || user!.id || '',
-        username: user!.walletAddress?.slice(0, 8) + '...' || user!.username || '',
-        fullName: user!.name || user!.fullName || '',
-        avatar: user!.avatarUrl,
-        verified: user!.isVerified
+        id: user!.user_metadata?.wallet_address || user!.id || '',
+        username: user!.user_metadata?.wallet_address?.slice(0, 8) + '...' || user!.user_metadata?.username || '',
+        fullName: user!.user_metadata?.full_name || '',
+        avatar: user!.user_metadata?.avatar_url,
+        verified: user!.user_metadata?.is_verified
       },
       parentId,
       replies: [],
@@ -551,16 +551,16 @@ const CommentsSystem: React.FC<CommentsSystemProps> = ({
             <div className="p-6 border-b border-secondary-700/50">
               <div className="flex space-x-3">
                 <div className="flex-shrink-0">
-                  {user?.avatarUrl ? (
+                  {user?.user_metadata?.avatar_url ? (
                     <img
-                      src={user.avatarUrl}
-                      alt={user.fullName}
+                      src={user.user_metadata.avatar_url}
+                      alt={user.user_metadata?.full_name || 'User'}
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-bold">
-                        {user?.fullName?.[0] || 'U'}
+                        {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
                       </span>
                     </div>
                   )}

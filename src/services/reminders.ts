@@ -1,6 +1,6 @@
 // Automated reminders logic stub
 // TODO: Implement scheduleReminder(userId, type, date) and sendReminders()
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { logAction } from './auditLogs';
 
 // Schedule a reminder by inserting into reminders table

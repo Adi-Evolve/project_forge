@@ -182,15 +182,15 @@ export const useGoogleDrive = (options: UseGoogleDriveOptions = {}) => {
     try {
       const result = await googleDriveService.uploadJSON(data, filename, metadata);
       
-      if (result.success) {
+      if (result && result.success && result.fileId && result.url) {
         toast.success(`JSON uploaded: ${filename}`);
         return {
-          fileId: result.fileId!,
-          url: result.url!,
+          fileId: result.fileId,
+          url: result.url,
           name: filename
         };
       } else {
-        toast.error(`JSON upload failed: ${result.error}`);
+        toast.error(`JSON upload failed: ${result?.error || 'deprecated'}`);
         return null;
       }
     } catch (error) {

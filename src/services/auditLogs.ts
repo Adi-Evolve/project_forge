@@ -1,6 +1,6 @@
 // Audit log utilities with Supabase + localStorage fallback
 // Implements: logAction(actionType, userId, details) and fetchLogs()
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 
 export interface AuditLog {
   id?: string;

@@ -1,6 +1,6 @@
 // Third-party integrations logic stub
 // TODO: Implement sendToSlack, sendToDiscord, sendEmailNotification
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { logAction } from './auditLogs';
 
 type IntegrationResult = { success: boolean; noop?: boolean; error?: any };

@@ -5,8 +5,33 @@
 
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL!;
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY!;
+// Validate URL helper
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return url.startsWith('https://') || url.startsWith('http://');
+  } catch {
+    return false;
+  }
+};
+
+// Get validated Supabase URL and key
+const getSupabaseConfig = () => {
+  const envUrl = process.env.REACT_APP_SUPABASE_URL;
+  const envKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+  
+  // Fallback URL and key from your .env file
+  const fallbackUrl = 'https://zatysaexdxqieeqylsgr.supabase.co';
+  const fallbackKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdHlzYWV4ZHhxaWVlcXlsc2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MDk4NTMsImV4cCI6MjA3NDA4NTg1M30.sg5XnjRwQFjn4NNB5yBkyFgT86jz0AXBRPtBsEbyJhs';
+  
+  // Use environment variable if valid, otherwise use fallback
+  const supabaseUrl = (envUrl && isValidUrl(envUrl)) ? envUrl : fallbackUrl;
+  const supabaseKey = envKey || fallbackKey;
+  
+  return { supabaseUrl, supabaseKey };
+};
+
+const { supabaseUrl, supabaseKey } = getSupabaseConfig();
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   realtime: {

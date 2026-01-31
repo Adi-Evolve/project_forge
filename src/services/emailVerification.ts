@@ -1,11 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabase as mainSupabase } from '../lib/supabase';
 
-// Supabase credentials
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://vdpmumstdxgftaaxeacx.supabase.co';
-const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcG11bXN0ZHhnZnRhYXhlYWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5MDYwODIsImV4cCI6MjA2NzQ4MjA4Mn0.Pbfm3FebzjQAHLPfdkzky-IH9aF3Zj1ZNVBjwe-3lyw';
-
-// Initialize Supabase client
-export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use the same Supabase instance as the main service
+export const supabase: SupabaseClient = mainSupabase;
 
 export interface EmailVerificationService {
   sendVerificationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;

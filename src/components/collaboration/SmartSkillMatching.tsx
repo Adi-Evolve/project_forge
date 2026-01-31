@@ -19,7 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
 interface User {
@@ -407,7 +407,7 @@ const SmartSkillMatching: React.FC<SmartSkillMatchingProps> = ({
           user_id: userId,
           type: 'collaboration_invite',
           title: 'Collaboration Invitation',
-          message: `${currentUser.fullName || 'A user'} invited you to collaborate on a project`,
+          message: `${currentUser.user_metadata?.full_name || currentUser.email || 'A user'} invited you to collaborate on a project`,
           metadata: {
             inviter_id: currentUser.id,
             project_id: projectId

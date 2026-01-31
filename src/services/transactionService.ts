@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { emailService, createDonationEmailData, DonationEmailData } from './emailService';
 import { web3Service, TransactionReceipt } from './web3';
 

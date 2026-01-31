@@ -14,8 +14,9 @@ import ProjectCard from '../components/projects/ProjectCard';
 import ProjectForm from '../components/projects/ProjectForm';
 import { toast } from 'react-hot-toast';
 import { localStorageService } from '../services/localStorage';
+import { centralizedProjectService } from '../services/centralizedProjectService';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import { getImageList, getPrimaryImage } from '../utils/image';
 import { Project } from '../types';
 
@@ -67,132 +68,112 @@ const ProjectsPage: React.FC = () => {
     try {
       setLoading(true);
 
-      // Load projects from Supabase
-      // Try to load projects with embedded creator user (requires FK relationship projects.creator_id -> users.id)
-      let projectsData: any = null;
-      let error: any = null;
+      console.log('🔍 Loading projects from both localStorage and Supabase...');
 
-      try {
-        const res = await supabase
-          .from('projects')
-          .select(`
-            *,
-            users:creator_id (
-              id,
-              username,
-              avatar_url
-            )
-          `)
-          .order('created_at', { ascending: false });
+      // Step 1: Get projects from localStorage (immediate)
+      const localProjects = localStorageService.getAllProjects();
+      console.log('📱 LocalStorage projects found:', localProjects.length);
 
-        projectsData = res.data;
-        error = res.error;
-      } catch (err) {
-        // PostgREST may throw for missing FK relationships; handle below
-        error = err;
-      }
+      // Step 2: Get projects from Supabase using centralized service
+      const supabaseProjects = await centralizedProjectService.getAllProjects();
+      console.log('☁️ Supabase projects found:', supabaseProjects.length);
 
-      // If the join failed because the DB doesn't have the FK relationship, fall back to separate queries
-      if (error) {
-        console.warn('Projects join failed, falling back to separate queries:', error);
-
-        // Fetch projects without the embedded users
-        const { data: basicProjects, error: basicError } = await supabase
-          .from('projects')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (basicError) {
-          console.error('Error loading projects (basic fetch):', basicError);
-          toast.error('Failed to load projects');
-          return;
+      // Step 3: Merge projects (prioritize Supabase, add localStorage only if not in Supabase)
+      const allProjects = [...supabaseProjects];
+      const supabaseTitles = new Set(supabaseProjects.map(p => p.title.toLowerCase()));
+      
+      localProjects.forEach(localProject => {
+        if (!supabaseTitles.has(localProject.title.toLowerCase())) {
+          allProjects.push(localProject);
         }
+      });
 
-        // Batch-fetch user profiles for the creator_ids we found
-        const creatorIds = Array.from(new Set((basicProjects || []).map((p: any) => p.creator_id).filter(Boolean)));
-        let usersById: Record<string, any> = {};
+      console.log('🔗 Total merged projects:', allProjects.length);
 
-        if (creatorIds.length > 0) {
-          const { data: usersData, error: usersError } = await supabase
-            .from('users')
-            .select('id,username,avatar_url')
-            .in('id', creatorIds as any[]);
-
-          if (!usersError && usersData) {
-            usersById = (usersData as any[]).reduce((acc, u) => {
-              acc[u.id] = u;
-              return acc;
-            }, {} as Record<string, any>);
-          } else {
-            console.warn('Failed to fetch creator profiles for projects:', usersError);
-          }
-        }
-
-        // Attach user info to each project record so the rest of the UI can work unchanged
-        projectsData = (basicProjects || []).map((project: any) => ({
-          ...project,
-          users: usersById[project.creator_id] || null
-        }));
-      }
-
-      // Transform the data to match our Project interface
-      const transformedProjects: Project[] = (projectsData || []).map((project: any) => {
+      // Step 4: Transform projects for UI
+      const transformedProjects = allProjects.map((project: any) => {
         return {
           id: project.id,
+          creator_id: project.creatorId || project.creator_id,
           title: project.title,
           description: project.description,
           shortDescription: project.description?.substring(0, 150) + '...' || '',
-          images: getImageList(project),
-          videos: [],
+          summary: project.longDescription || project.summary,
           category: project.category || 'General',
           tags: project.tags || [],
-          status: (project.status as 'active' | 'completed' | 'paused') || 'active',
-          visibility: 'public' as const,
-          targetAmount: 0, // No funding in centralized version
-          currentAmount: 0,
-          currency: 'USD' as const,
-          startDate: project.created_at,
-          endDate: project.deadline,
-          requirements: [],
-          skillsNeeded: project.skills_needed || [],
-          teamSize: project.team_size || 1,
+          deadline: project.deadline,
+          status: (project.status as 'draft' | 'pending' | 'active' | 'completed' | 'cancelled') || 'active',
+          approval_status: 'approved' as const,
+          cover_image: project.imageUrls?.[0],
+          image_urls: project.imageUrls || [],
+          images: project.imageUrls || [],
+          video_url: project.videoUrl,
+          website_url: project.demoUrl,
+          github_url: undefined,
+          roadmap: project.roadmap || [],
+          team_members: project.fundingTiers || [],
+          requirements: project.longDescription,
+          featured: false,
+          views: project.views || 0,
+          likes: project.likes || 0,
+          like_count: project.likes || 0,
+          comment_count: project.comments || 0,
+          share_count: 0,
+          bookmark_count: 0,
+          created_at: project.createdAt || project.created_at || new Date().toISOString(),
+          updated_at: project.updatedAt || project.updated_at || new Date().toISOString(),
+          // Legacy camelCase aliases used by UI
+          createdAt: project.createdAt || project.created_at || new Date().toISOString(),
+          updatedAt: project.updatedAt || project.updated_at || new Date().toISOString(),
+          // Voting / engagement
+          upvotes: project.likes || 0,
+          downvotes: 0,
+          bookmarks: 0,
+          // Team sizing
+          teamSize: project.teamSize || 1,
           currentTeamSize: 1,
-          location: project.location,
-          remote: project.remote || false,
+          // Owner / creator quick view used by frontend
           owner: {
-            id: project.creator_id,
+            id: project.creatorId || project.creator_id,
             email: '',
-            username: project.users?.username || 'Unknown Creator',
-            fullName: project.users?.full_name || project.users?.username || 'Unknown Creator',
-            avatar: project.users?.avatar_url || '',
-            avatarUrl: project.users?.avatar_url || '',
-            bio: project.users?.bio || '',
-            location: project.users?.location || '',
-            website: project.users?.website || '',
+            username: project.creatorName || 'Unknown Creator',
+            fullName: project.creatorName || 'Unknown Creator',
+            avatar: '',
+            avatarUrl: '',
+            bio: '',
+            location: '',
+            website: '',
             skills: [],
             fieldsOfInterest: [],
             reputation: 0,
             verified: false,
-            githubProfile: project.users?.github_profile || '',
-            linkedinProfile: project.users?.linkedin_profile || '',
-            portfolioUrl: project.users?.portfolio_url || '',
-            createdAt: project.users?.created_at || project.created_at,
-            updatedAt: project.users?.updated_at || project.created_at
+            githubProfile: '',
+            linkedinProfile: '',
+            portfolioUrl: '',
+            createdAt: project.createdAt || project.created_at,
+            updatedAt: project.updatedAt || project.updated_at
           },
-          collaborators: [],
-          upvotes: project.like_count || 0,
-          downvotes: 0,
-          views: project.view_count || 0,
-          bookmarks: project.bookmark_count || 0,
+          // Compatibility fields used throughout the UI
+          endDate: project.deadline,
+          startDate: project.createdAt || project.created_at,
+          fundingGoal: 0,
+          fundingRaised: 0,
+          targetAmount: 0,
+          currentAmount: 0,
+          skillsNeeded: [],
           comments: [],
+          // Legacy UI fields
+          visibility: 'public' as const,
+          collaborators: [],
           updates: [],
-          createdAt: project.created_at,
-          updatedAt: project.updated_at || project.created_at
+          currency: 'USD' as const,
+          location: '',
+          remote: false
         };
-      });
+      }) as Project[];
 
-      // Filter only active/in_progress projects
-      const activeProjects = transformedProjects.filter(p => p.status === 'in_progress' || p.status === 'seeking_team');
+      // Filter only active projects
+      const activeProjects = transformedProjects.filter((p: any) => p.status === 'active');
 
       setProjects(activeProjects);
       setFilteredProjects(activeProjects);
@@ -228,7 +209,7 @@ const ProjectsPage: React.FC = () => {
         project.id === projectId 
           ? { 
               ...project, 
-              upvotes: project.upvotes + 1
+              upvotes: (project.upvotes || project.likes || 0) + 1
             }
           : project
       ));
@@ -238,7 +219,7 @@ const ProjectsPage: React.FC = () => {
         project.id === projectId 
           ? { 
               ...project, 
-              upvotes: project.upvotes + 1
+              upvotes: (project.upvotes || project.likes || 0) + 1
             }
           : project
       ));
@@ -280,8 +261,9 @@ const ProjectsPage: React.FC = () => {
 
     // Additional filters
     filtered = filtered.filter(project => {
-      if (filters.status !== 'all' && project.status !== filters.status) return false;
-  if (project.teamSize < filters.teamSizeMin || project.teamSize > filters.teamSizeMax) return false;
+      if (filters.status !== 'all' && project.status !== (filters.status as any)) return false;
+      const teamSize = project.teamSize || project.currentTeamSize || 1;
+      if (teamSize < filters.teamSizeMin || teamSize > filters.teamSizeMax) return false;
       return true;
     });
 
@@ -289,17 +271,17 @@ const ProjectsPage: React.FC = () => {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt || b.created_at || Date.now()).getTime() - new Date(a.createdAt || a.created_at || Date.now()).getTime();
         case 'oldest':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return new Date(a.createdAt || a.created_at || Date.now()).getTime() - new Date(b.createdAt || b.created_at || Date.now()).getTime();
         // case 'funding':
         //   return b.fundingRaised - a.fundingRaised;
         case 'popular':
-          return b.upvotes - a.upvotes;
+          return (b.upvotes || b.likes || 0) - (a.upvotes || a.likes || 0);
         case 'deadline':
-          return new Date(a.endDate || Date.now()).getTime() - new Date(b.endDate || Date.now()).getTime();
+          return new Date(a.endDate || a.deadline || Date.now()).getTime() - new Date(b.endDate || b.deadline || Date.now()).getTime();
         case 'team-size':
-          return b.teamSize - a.teamSize;
+          return (b.teamSize || b.currentTeamSize || 1) - (a.teamSize || a.currentTeamSize || 1);
         default:
           return 0;
       }
@@ -370,7 +352,7 @@ const ProjectsPage: React.FC = () => {
       project.id === projectId
         ? {
             ...project,
-            bookmarks: project.bookmarks + 1 // Since we don't track user-specific bookmarks in centralized version
+            bookmarks: (project.bookmarks || 0) + 1 // Since we don't track user-specific bookmarks in centralized version
           }
         : project
     ));
@@ -616,12 +598,11 @@ const ProjectsPage: React.FC = () => {
                         fundingGoal: project.targetAmount || 0,
                         fundingRaised: project.currentAmount || 0,
                         deadline: project.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        teamSize: project.teamSize,
-                        skillsNeeded: project.skillsNeeded,
-                        createdBy: project.owner.id,
-                        createdAt: project.createdAt,
-                        status: project.status === 'in_progress' ? 'active' : 
-                               project.status === 'completed' ? 'funded' : 'expired',
+                        teamSize: project.teamSize || project.currentTeamSize || 1,
+                        skillsNeeded: project.skillsNeeded || [],
+         createdBy: project.owner?.id || project.creator_id || 'unknown',
+         createdAt: project.createdAt || project.created_at || new Date().toISOString(),
+         status: project.status === 'completed' ? 'funded' : (project.status === 'active' ? 'active' : 'expired'),
                         supporters: [],
                         comments: project.comments?.length || 0,
                         likes: project.upvotes || 0,

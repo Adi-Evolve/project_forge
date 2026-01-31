@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { contributionsService } from './contributionsService';
 import { web3Service } from './web3';
 
@@ -36,7 +37,7 @@ class TransactionMonitorService {
           
           // Update project totals
           const contribution = await contributionsService.getContributionByTxHash(txHash);
-          if (contribution.success && contribution.contribution) {
+          if (contribution.success && contribution.contribution && contribution.contribution.project_id) {
             await contributionsService.updateProjectTotals(contribution.contribution.project_id);
           }
           

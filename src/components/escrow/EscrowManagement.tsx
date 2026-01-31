@@ -8,7 +8,8 @@ import {
   CalendarIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
-import { escrowService, Milestone, EscrowRelease, ProjectEscrow } from '../../services/escrowService';
+// import { enhancedSupabaseService } from '../../services/enhancedSupabase';
+import escrowService from '../../services/escrowService';
 import { securityService } from '../../services/security';
 import { useAuth } from '../../context/AuthContext';
 
@@ -17,11 +18,41 @@ interface EscrowManagementProps {
   isOwner: boolean;
 }
 
+// Minimal type stubs (escrow/milestone types removed from global types)
+type Milestone = {
+  id: string;
+  title: string;
+  description?: string;
+  targetAmount?: number;
+  dueDate?: string;
+  status?: string;
+  evidence?: string;
+  reviewerComments?: string;
+};
+
+type EscrowRelease = {
+  id: string;
+  milestoneId: string;
+  amount: number;
+  status: string;
+};
+
+type ProjectEscrow = {
+  escrowStatus?: string;
+  totalFunds?: number | string;
+  releasedFunds?: number | string;
+  lockedFunds?: number | string;
+  completedMilestones?: number;
+  milestoneCount?: number;
+};
+
 export const EscrowManagement: React.FC<EscrowManagementProps> = ({ 
   projectId, 
   isOwner 
 }) => {
   const { user } = useAuth();
+  // Cast to any to work with the deprecated shim
+  const es: any = escrowService;
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [releases, setReleases] = useState<EscrowRelease[]>([]);
   const [escrowStatus, setEscrowStatus] = useState<ProjectEscrow | null>(null);
@@ -43,20 +74,20 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
     setLoading(true);
     try {
       // Load milestones
-      const milestonesResult = await escrowService.getProjectMilestones(projectId);
-      if (milestonesResult.success) {
+  const milestonesResult = await es?.getProjectMilestones(projectId);
+      if (milestonesResult && milestonesResult.success) {
         setMilestones(milestonesResult.milestones || []);
       }
 
       // Load releases
-      const releasesResult = await escrowService.getProjectReleases(projectId);
-      if (releasesResult.success) {
+  const releasesResult = await es?.getProjectReleases(projectId);
+      if (releasesResult && releasesResult.success) {
         setReleases(releasesResult.releases || []);
       }
 
       // Load escrow status
-      const statusResult = await escrowService.getProjectEscrowStatus(projectId);
-      if (statusResult.success) {
+  const statusResult = await es?.getProjectEscrowStatus(projectId);
+      if (statusResult && statusResult.success) {
         setEscrowStatus(statusResult.escrow || null);
       }
     } catch (error) {
@@ -93,14 +124,14 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
     }
 
     // Verify via DB lookup before attempting create (extra safety)
-    const identity = user?.id || user?.walletAddress;
+    const identity = user?.id || user?.user_metadata?.wallet_address;
     const check = await securityService.enforceOwnerRpc(projectId, identity);
     if (!check.success) {
       alert('Ownership verification failed. Action blocked.');
       return;
     }
 
-    if (!user?.walletAddress) return;
+    if (!user?.user_metadata?.wallet_address) return;
 
     try {
       setLoading(true);
@@ -110,9 +141,9 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
         status: 'pending' as const
       }));
 
-      const result = await escrowService.createMilestones(projectId, milestonesToCreate);
+  const result = await es?.createMilestones(projectId, milestonesToCreate);
       
-      if (result.success) {
+  if (result && result.success) {
         setNewMilestones([{ title: '', description: '', targetAmount: 0, dueDate: '' }]);
         setShowCreateMilestone(false);
         await loadEscrowData();
@@ -130,8 +161,8 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
 
   const submitMilestoneCompletion = async (milestoneId: string, evidence: string) => {
     try {
-      const result = await escrowService.submitMilestoneCompletion(milestoneId, evidence);
-      if (result.success) {
+  const result = await es?.submitMilestoneCompletion(milestoneId, evidence);
+  if (result && result.success) {
         await loadEscrowData();
         alert('Milestone submitted for review!');
       } else {
@@ -150,18 +181,18 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
     }
 
     // Verify via DB lookup before attempting release request
-    const identity = user?.id || user?.walletAddress;
+    const identity = user?.id || user?.user_metadata?.wallet_address;
     const check = await securityService.enforceOwnerRpc(projectId, identity);
     if (!check.success) {
       alert('Ownership verification failed. Action blocked.');
       return;
     }
 
-    if (!user?.walletAddress) return;
+    if (!user?.user_metadata?.wallet_address) return;
 
     try {
-      const result = await escrowService.requestMilestoneRelease(projectId, milestoneId, user.walletAddress);
-      if (result.success) {
+  const result = await es?.requestMilestoneRelease(projectId, milestoneId, user.user_metadata?.wallet_address);
+  if (result && result.success) {
         await loadEscrowData();
         alert('Fund release requested!');
       } else {
@@ -217,38 +248,38 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm">
       {/* Header with Escrow Status */}
-      {escrowStatus && (
+  {escrowStatus && (
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <ChartBarIcon className="h-6 w-6 mr-2 text-indigo-600" />
               Escrow Status
             </h3>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               escrowStatus.escrowStatus === 'completed' ? 'bg-green-100 text-green-800' :
               escrowStatus.escrowStatus === 'active' ? 'bg-blue-100 text-blue-800' :
               'bg-gray-100 text-gray-800'
             }`}>
-              {escrowStatus.escrowStatus.replace('_', ' ').toUpperCase()}
+              {(escrowStatus.escrowStatus || '').replace('_', ' ').toUpperCase()}
             </span>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{escrowStatus.totalFunds}</div>
+                <div className="text-2xl font-bold text-gray-900">{escrowStatus.totalFunds || 0}</div>
               <div className="text-sm text-gray-600">Total Funds (ETH)</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{escrowStatus.releasedFunds}</div>
+                <div className="text-2xl font-bold text-green-600">{escrowStatus.releasedFunds || 0}</div>
               <div className="text-sm text-gray-600">Released (ETH)</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{escrowStatus.lockedFunds}</div>
+                <div className="text-2xl font-bold text-blue-600">{escrowStatus.lockedFunds || 0}</div>
               <div className="text-sm text-gray-600">Locked (ETH)</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">
-                {escrowStatus.completedMilestones}/{escrowStatus.milestoneCount}
+                <div className="text-2xl font-bold text-indigo-600">
+                {(escrowStatus.completedMilestones || 0)}/{(escrowStatus.milestoneCount || 0)}
               </div>
               <div className="text-sm text-gray-600">Milestones</div>
             </div>
@@ -305,12 +336,12 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
                   <div key={milestone.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
-                        {getStatusIcon(milestone.status)}
+                        {getStatusIcon(milestone.status || '')}
                         <h5 className="ml-2 text-lg font-medium text-gray-900">{milestone.title}</h5>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(milestone.status)}`}>
-                          {milestone.status.replace('_', ' ').toUpperCase()}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(milestone.status || '')}`}>
+                          {(milestone.status || '').replace('_', ' ').toUpperCase()}
                         </span>
                         <span className="text-sm font-medium text-indigo-600">
                           {milestone.targetAmount}% of funds
@@ -323,7 +354,7 @@ export const EscrowManagement: React.FC<EscrowManagementProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm text-gray-500">
                         <CalendarIcon className="h-4 w-4 mr-1" />
-                        Due: {new Date(milestone.dueDate).toLocaleDateString()}
+                        Due: {new Date(milestone.dueDate || Date.now()).toLocaleDateString()}
                       </div>
                       
                       <div className="flex space-x-2">

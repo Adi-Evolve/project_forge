@@ -40,7 +40,7 @@ import {
   CheckCircleIcon as CheckSolid
 } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
-import supabase from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface Challenge {
   id: string;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { logAction } from '../../services/auditLogs';
@@ -62,7 +62,7 @@ const SkillEndorsements: React.FC<{ userId: string }> = ({ userId }) => {
       // audit + notify
       try {
   await logAction('user_endorsed', user?.id || null, { target: userId, skill });
-  await createNotification(userId, 'New endorsement', `${user?.fullName || 'Someone'} endorsed you for ${skill}`);
+  await createNotification(userId, 'New endorsement', `${user?.user_metadata?.full_name || user?.email || 'Someone'} endorsed you for ${skill}`);
       } catch (e) {
         console.warn('Endorse hooks failed', e);
       }

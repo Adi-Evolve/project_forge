@@ -16,6 +16,9 @@ export interface User {
   phone?: string;
   company?: string;
   role?: string;
+  // Legacy/UI-friendly aliases
+  avatar?: string;
+  fullName?: string;
   skills: string[];
   experience_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   user_type: 'user' | 'admin' | 'reviewer';
@@ -41,6 +44,7 @@ export interface Project {
   creator_id: string;
   title: string;
   description: string;
+  shortDescription?: string;
   summary?: string;
   category: string;
   tags: string[];
@@ -49,6 +53,7 @@ export interface Project {
   approval_status: 'pending' | 'approved' | 'rejected';
   cover_image?: string; // ImgBB URL
   image_urls?: string[]; // Multiple ImgBB URLs
+  images?: string[]; // legacy alias used across UI
   video_url?: string;
   website_url?: string;
   github_url?: string;
@@ -58,14 +63,36 @@ export interface Project {
   featured: boolean;
   views: number;
   likes: number;
+  like_count?: number; // optional legacy alias
   comment_count: number;
   share_count: number;
-  bookmark_count: number;
+  bookmark_count?: number;
   admin_notes?: string;
   reviewed_by?: string;
   reviewed_at?: string;
   created_at: string;
   updated_at: string;
+  // Legacy camelCase aliases used by UI
+  createdAt?: string;
+  updatedAt?: string;
+  // Voting / engagement
+  upvotes?: number;
+  downvotes?: number;
+  bookmarks?: number;
+  // Team sizing
+  teamSize?: number;
+  currentTeamSize?: number;
+  // Owner / creator quick view used by frontend
+  owner?: any;
+  // Compatibility fields used throughout the UI
+  endDate?: string;
+  startDate?: string;
+  fundingGoal?: number;
+  fundingRaised?: number;
+  targetAmount?: number;
+  currentAmount?: number;
+  skillsNeeded?: string[];
+  comments?: any[];
 }
 
 export interface Idea {

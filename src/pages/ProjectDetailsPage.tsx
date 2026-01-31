@@ -3,20 +3,19 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { StoredProject, localStorageService } from '../services/localStorage';
-import { enhancedProjectService } from '../services/enhancedProjectService';
+import { centralizedProjectService } from '../services/centralizedProjectService';
 import { getImageList, getPrimaryImage } from '../utils/image';
-import ContributionsDisplay from '../components/funding/ContributionsDisplay';
-import { EscrowManagement } from '../components/escrow/EscrowManagement';
+import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeftIcon,
   CalendarDaysIcon,
-  CurrencyDollarIcon,
   UserGroupIcon,
   ChartBarIcon,
   ClockIcon,
   TagIcon,
-  LinkIcon,
   PlayIcon,
+  ChatBubbleLeftRightIcon,
+  MagnifyingGlassIcon,
   StarIcon,
   EyeIcon,
   HeartIcon,
@@ -26,10 +25,13 @@ import {
   LightBulbIcon,
   CodeBracketIcon,
   GlobeAltIcon,
-  ShieldCheckIcon
+  PhotoIcon,
+  ChatBubbleLeftEllipsisIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
-import { useAuth } from '../context/AuthContext';
 
 const ProjectDetailsPage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
@@ -43,6 +45,9 @@ const ProjectDetailsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [newReview, setNewReview] = useState('');
+  const [rating, setRating] = useState(5);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -55,9 +60,10 @@ const ProjectDetailsPage: React.FC = () => {
         // Try localStorage first
         let data = await localStorageService.getProjectById(projectId);
 
-        // If not found, try enhanced service which will query Supabase (by id or title fallback)
+        // If not found, try centralized service
         if (!data) {
-          const fetched = await enhancedProjectService.getProjectById(projectId);
+          const allProjects = await centralizedProjectService.getAllProjects();
+          const fetched = allProjects.find(p => p.id === projectId);
           if (fetched) data = fetched;
         }
 
@@ -84,7 +90,7 @@ const ProjectDetailsPage: React.FC = () => {
     }
 
     // If auth user has a UUID (id) compare to creatorId
-    const authId = (user && (user.id || user.username || user.walletAddress)) || null;
+    const authId = (user && (user.id || user.user_metadata?.username || user.user_metadata?.wallet_address)) || null;
 
     let owner = false;
     try {
@@ -93,8 +99,8 @@ const ProjectDetailsPage: React.FC = () => {
       }
 
       // Also allow matching by wallet address (creatorAddress)
-      if (!owner && user && user.walletAddress && (project as any).creatorAddress) {
-        owner = String((project as any).creatorAddress).toLowerCase() === String(user.walletAddress).toLowerCase();
+      if (!owner && user && user.user_metadata?.wallet_address && (project as any).creatorAddress) {
+        owner = String((project as any).creatorAddress).toLowerCase() === String(user.user_metadata.wallet_address).toLowerCase();
       }
 
       setIsOwner(owner);
@@ -103,45 +109,6 @@ const ProjectDetailsPage: React.FC = () => {
       setIsOwner(false);
     }
   }, [project, user]);
-
-  // Handle funding success message
-  useEffect(() => {
-    const funded = searchParams.get('funded');
-    const amount = searchParams.get('amount');
-    const txHash = searchParams.get('tx');
-
-    if (funded === 'true' && amount) {
-      // Show success toast
-      toast.success(
-        <div className="flex flex-col">
-          <div className="font-semibold">🎉 Funding Successful!</div>
-          <div className="text-sm">You donated {amount} ETH to this project</div>
-          {txHash && (
-            <a
-              href={`https://sepolia.etherscan.io/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-xs mt-1"
-            >
-              View transaction →
-            </a>
-          )}
-        </div>,
-        {
-          duration: 6000,
-          position: 'top-center',
-          style: {
-            background: '#10b981',
-            color: 'white',
-          },
-        }
-      );
-
-      // Clean up URL parameters
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, [searchParams]);
 
   if (loading) {
     return (
@@ -172,8 +139,8 @@ const ProjectDetailsPage: React.FC = () => {
     );
   }
 
-  const fundingProgress = project.fundingGoal > 0 ? (project.currentFunding / project.fundingGoal) * 100 : 0;
-  const daysLeft = Math.ceil((new Date(project.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+
   
   const galleryUrls = getImageList(project) || [];
   const projectImage = galleryUrls.length > 0
@@ -185,7 +152,7 @@ const ProjectDetailsPage: React.FC = () => {
     { id: 'details', label: 'Details', icon: CodeBracketIcon },
     { id: 'roadmap', label: 'Roadmap', icon: ChartBarIcon },
     { id: 'team', label: 'Team', icon: UserGroupIcon },
-    { id: 'escrow', label: 'Escrow', icon: ShieldCheckIcon }
+    { id: 'reviews', label: 'Reviews', icon: ChatBubbleLeftRightIcon }
   ];
 
   return (
@@ -395,6 +362,48 @@ const ProjectDetailsPage: React.FC = () => {
                       </a>
                     )}
                   </div>
+
+                  {/* Milestones */}
+                  <div className="mt-8">
+                    <h3 className="text-xl font-bold text-gray-900 mb-6">Project Milestones</h3>
+                    {project.milestones && project.milestones.length > 0 ? (
+                      <div className="space-y-4">
+                        {project.milestones.map((milestone: any, index: number) => (
+                          <div key={index} className="flex items-start space-x-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div className="flex-shrink-0 mt-1">
+                              {milestone.approved ? (
+                                <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                              ) : (
+                                <ClockIcon className="w-6 h-6 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900">{milestone.title}</h4>
+                              <p className="text-gray-600 text-sm mt-1">{milestone.description}</p>
+                              {milestone.deadline && (
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Deadline: {new Date(milestone.deadline).toLocaleDateString()}
+                                </p>
+                              )}
+                              {milestone.approved && (
+                                <div className="flex items-center mt-2">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircleIcon className="w-4 h-4 mr-1" />
+                                    Approved by Reviewer
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <ClockIcon className="mx-auto w-12 h-12 text-gray-400 mb-4" />
+                        <p className="text-gray-600">No milestones defined for this project yet.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -494,14 +503,101 @@ const ProjectDetailsPage: React.FC = () => {
                 </div>
               )}
 
-              {activeTab === 'escrow' && (
+              {activeTab === 'reviews' && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Escrow Management</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Project Reviews</h2>
                   
-                  <EscrowManagement 
-                    projectId={project.id}
-                    isOwner={isOwner}
-                  />
+                  {/* Add Review Form */}
+                  <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Leave a Review</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                        <div className="flex items-center space-x-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onClick={() => setRating(star)}
+                              className={`w-8 h-8 ${
+                                star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                              } hover:text-yellow-400 transition-colors`}
+                            >
+                              <StarIcon className="w-full h-full fill-current" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                        <textarea
+                          value={newReview}
+                          onChange={(e) => setNewReview(e.target.value)}
+                          placeholder="Share your thoughts about this project..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={4}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (newReview.trim()) {
+                            const review = {
+                              id: Date.now(),
+                              user: user?.user_metadata?.full_name || 'Anonymous',
+                              rating,
+                              comment: newReview,
+                              date: new Date().toISOString()
+                            };
+                            setReviews([...reviews, review]);
+                            setNewReview('');
+                            setRating(5);
+                          }
+                        }}
+                        disabled={!newReview.trim()}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Submit Review
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reviews List */}
+                  <div className="space-y-4">
+                    {reviews.length > 0 ? (
+                      reviews.map((review) => (
+                        <div key={review.id} className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                {review.user.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{review.user}</h4>
+                                <div className="flex items-center space-x-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <StarIcon
+                                      key={star}
+                                      className={`w-4 h-4 ${
+                                        star <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {new Date(review.date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className="text-gray-700">{review.comment}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <ChatBubbleLeftRightIcon className="mx-auto w-12 h-12 text-gray-400 mb-4" />
+                        <p className="text-gray-600">No reviews yet. Be the first to review this project!</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -534,78 +630,62 @@ const ProjectDetailsPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Funding Stats */}
+            {/* Enhanced Image Gallery */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
               className="bg-white rounded-2xl p-6 shadow-xl border border-gray-200"
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Funding Progress</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Project Gallery</h3>
               
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Progress</span>
-                  <span className="font-bold text-gray-900">{Math.round(fundingProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(fundingProgress, 100)}%` }}
-                    transition={{ duration: 1, delay: 0.5 }}
-                    className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full"
-                  />
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <CurrencyDollarIcon className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-600">Raised</span>
+              {galleryUrls.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Main Image */}
+                  <div className="relative">
+                    <img
+                      src={galleryUrls[selectedImageIndex] || galleryUrls[0]}
+                      alt="Project image"
+                      className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setLightboxOpen(true)}
+                    />
+                    <button
+                      onClick={() => setLightboxOpen(true)}
+                      className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg"
+                    >
+                      <MagnifyingGlassIcon className="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                    </button>
                   </div>
-                  <span className="font-bold text-gray-900">${project.currentFunding.toLocaleString()}</span>
+                  
+                  {/* Thumbnail Strip */}
+                  {galleryUrls.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {galleryUrls.slice(0, 8).map((url, index) => (
+                        <img
+                          key={index}
+                          src={url}
+                          alt={`Project image ${index + 1}`}
+                          className={`w-full h-16 object-cover rounded cursor-pointer border-2 transition-all ${
+                            selectedImageIndex === index ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedImageIndex(index)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {galleryUrls.length > 8 && (
+                    <p className="text-sm text-gray-500 text-center">
+                      +{galleryUrls.length - 8} more images
+                    </p>
+                  )}
                 </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <ChartBarIcon className="w-5 h-5 text-blue-600" />
-                    <span className="text-gray-600">Goal</span>
-                  </div>
-                  <span className="font-bold text-gray-900">${project.fundingGoal.toLocaleString()}</span>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <PhotoIcon className="mx-auto w-12 h-12 text-gray-400 mb-4" />
+                  <p className="text-gray-600">No images available for this project.</p>
                 </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <ClockIcon className="w-5 h-5 text-purple-600" />
-                    <span className="text-gray-600">Days left</span>
-                  </div>
-                  <span className="font-bold text-gray-900">{Math.max(0, daysLeft)}</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <UserGroupIcon className="w-5 h-5 text-orange-600" />
-                    <span className="text-gray-600">Backers</span>
-                  </div>
-                  <span className="font-bold text-gray-900">{project.supporters?.length || 0}</span>
-                </div>
-              </div>
-
-              {/* Fund Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate(`/projects/${project.id}/fund`)}
-                className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <RocketLaunchIcon className="w-5 h-5" />
-                  <span>Fund This Project</span>
-                </div>
-              </motion.button>
+              )}
             </motion.div>
 
             {/* Project Status */}
@@ -640,10 +720,6 @@ const ProjectDetailsPage: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Contributors Display */}
-            <ContributionsDisplay
-              projectId={project.id}
-            />
           </div>
         </div>
       </div>

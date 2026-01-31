@@ -19,7 +19,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { Link, useSearchParams } from 'react-router-dom';
-import supabase, { supabase as supabaseClient, TABLES } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 
 interface SearchResult {
   id: string;
@@ -65,7 +65,7 @@ const SearchResultsPage: React.FC = () => {
       // load popular projects as fallback
       (async () => {
         try {
-          const { data: projects } = await supabaseClient
+          const { data: projects } = await supabase
             .from('projects')
             .select('id,title,summary,cover_image,creator_id,created_at,views,likes')
             .order('views', { ascending: false })
@@ -97,28 +97,28 @@ const SearchResultsPage: React.FC = () => {
     (async () => {
       try {
         // Search projects
-        const { data: projects } = await supabaseClient
+        const { data: projects } = await supabase
           .from('projects')
           .select('id,title,summary,cover_image,creator_id,created_at,views,likes')
           .ilike('title', `%${q}%`)
           .limit(50);
 
         // Search ideas
-        const { data: ideas } = await supabaseClient
+        const { data: ideas } = await supabase
           .from('ideas')
           .select('id,title,summary,created_at')
           .ilike('title', `%${q}%`)
           .limit(50);
 
         // Search users
-        const { data: users } = await supabaseClient
+        const { data: users } = await supabase
           .from('users')
           .select('id,username,full_name,avatar_url')
           .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
           .limit(50);
 
         // Search project updates / content
-        const { data: updates } = await supabaseClient
+        const { data: updates } = await supabase
           .from('project_updates')
           .select('id,title,body,project_id,created_at')
           .ilike('title', `%${q}%`)

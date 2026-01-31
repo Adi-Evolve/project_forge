@@ -18,7 +18,7 @@ import {
   StarIcon as StarSolid
 } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
  
 
@@ -117,7 +117,7 @@ const IdeasPage: React.FC = () => {
             reputation_score
           )
         `)
-        .eq('status', 'published')
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -140,11 +140,11 @@ const IdeasPage: React.FC = () => {
         visibility: (idea.visibility as 'public' | 'premium' | 'private') || 'public',
         verified: !!idea.verified,
         metrics: {
-          views: idea.views || 0,
-          likes: idea.likes || 0,
-          comments: 0, // Will be loaded separately if needed
+          views: idea.view_count || 0,
+          likes: idea.upvote_count || 0,
+          comments: idea.comment_count || 0,
           rating: idea.rating || 0,
-          potential: Math.min((idea.likes || 0) / 10 + (idea.views || 0) / 100, 10)
+          potential: Math.min((idea.upvote_count || 0) / 10 + (idea.view_count || 0) / 100, 10)
         },
         createdAt: idea.created_at,
         status: (idea.status as 'available' | 'sold' | 'pending' | 'draft') || 'available'
@@ -259,7 +259,7 @@ const IdeasPage: React.FC = () => {
         type: formData.type,
         visibility: formData.visibility,
         creator_id: user.id,
-        status: 'published'
+        status: 'approved' // Use valid status value that matches schema
       };
 
       // Insert idea into Supabase

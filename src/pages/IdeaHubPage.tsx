@@ -27,7 +27,7 @@ import {
   BookmarkIcon as BookmarkSolid,
   StarIcon as StarSolid
 } from '@heroicons/react/24/solid';
-import { supabase } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 

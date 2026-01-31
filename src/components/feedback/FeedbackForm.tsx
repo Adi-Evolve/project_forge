@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { logAction } from '../../services/auditLogs';
@@ -36,7 +36,7 @@ const FeedbackForm: React.FC<{ userId: string }> = ({ userId }) => {
       setRating(5);
       try {
         await logAction('feedback_submitted', user?.id || null, { to: userId, rating });
-        await createNotification(userId, 'New feedback received', `${user?.fullName || 'Someone'} left feedback (${rating} ⭐)`);
+        await createNotification(userId, 'New feedback received', `${user?.user_metadata?.full_name || user?.email || 'Someone'} left feedback (${rating} ⭐)`);
       } catch (e) {
         console.warn('feedback hooks failed', e);
       }

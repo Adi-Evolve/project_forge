@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { User, ApiResponse } from '../types';
 import { toast } from 'react-hot-toast';
 
