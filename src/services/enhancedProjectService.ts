@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { localStorageService, StoredProject } from './localStorage';
 import { toast } from 'react-hot-toast';
@@ -138,7 +137,7 @@ class EnhancedProjectService {
       });
 
       // Check if project already exists by blockchain_id (which is the project.id)
-      const { data: existingProject, error: checkError } = await supabase
+      const { data: existingProject } = await supabase
         .from('projects')
         .select('id')
         .eq('blockchain_id', project.id)
@@ -189,7 +188,7 @@ class EnhancedProjectService {
           updated_at: new Date().toISOString()
         };
 
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('projects')
           .update(supabaseData)
           .eq('id', existingProject.id)
@@ -646,7 +645,7 @@ class EnhancedProjectService {
       console.log('🧪 Testing Supabase connection...');
 
       // Test basic connection
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('projects')
         .select('count', { count: 'exact', head: true });
 
@@ -658,7 +657,7 @@ class EnhancedProjectService {
       console.log('✅ Supabase connection successful');
 
       // Test schema by checking required columns
-      const { data: schemaData, error: schemaError } = await supabase
+      const { error: schemaError } = await supabase
         .from('projects')
         .select('id, creator_id, title, ipfs_hash, blockchain_tx_hash')
         .limit(1);

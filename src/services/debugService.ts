@@ -8,7 +8,7 @@ export class DebugService {
   static async testConnection(): Promise<boolean> {
     try {
       console.log('🔍 Testing Supabase connection...');
-      const { data, error } = await supabase.from('projects').select('count').limit(1);
+      const { error } = await supabase.from('projects').select('count').limit(1);
       
       if (error) {
         console.error('❌ Supabase connection failed:', error);

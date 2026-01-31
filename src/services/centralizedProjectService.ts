@@ -113,7 +113,7 @@ class CentralizedProjectService {
       }
 
       // Check if project already exists by title (since no blockchain_id)
-      const { data: existingProject, error: checkError } = await supabase
+      const { data: existingProject } = await supabase
         .from('projects')
         .select('id')
         .eq('title', project.title)
@@ -148,7 +148,7 @@ class CentralizedProjectService {
           updated_at: new Date().toISOString()
         };
 
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('projects')
           .update(supabaseData)
           .eq('id', existingProject.id)
