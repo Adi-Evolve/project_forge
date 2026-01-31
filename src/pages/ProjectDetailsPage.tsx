@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
@@ -703,10 +703,10 @@ const ProjectDetailsPage: React.FC = () => {
                   project.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
-                  {project.status === 'active' && '🟢'}
-                  {project.status === 'completed' && '✅'}
-                  {project.status === 'cancelled' && '❌'}
-                  {project.status === 'draft' && '📝'}
+                  {project.status === 'active' && 'ÃƒÂ°Ã…Â¸Ã…Â¸Ã‚Â¢'}
+                  {project.status === 'completed' && 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦'}
+                  {project.status === 'cancelled' && 'ÃƒÂ¢Ã‚ÂÃ…â€™'}
+                  {project.status === 'draft' && 'ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â'}
                   <span className="ml-2 capitalize">{project.status}</span>
                 </div>
                 
@@ -728,3 +728,7 @@ const ProjectDetailsPage: React.FC = () => {
 };
 
 export default ProjectDetailsPage;
+
+
+
+

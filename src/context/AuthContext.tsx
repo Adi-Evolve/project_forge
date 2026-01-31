@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, authHelpers } from '../lib/supabase';
 
@@ -167,3 +167,7 @@ export function useAuth(): AuthContextType {
   }
   return context;
 }
+
+
+
+
