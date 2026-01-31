@@ -53,7 +53,7 @@ const LoginPage: React.FC = () => {
   };
 
   const handleSkipLogin = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (

@@ -68,7 +68,7 @@ const SignupPage: React.FC = () => {
   };
 
   const handleSkipLogin = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (
