@@ -67,6 +67,10 @@ const SignupPage: React.FC = () => {
     }
   };
 
+  const handleSkipLogin = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -170,6 +174,16 @@ const SignupPage: React.FC = () => {
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
+              </button>
+            </div>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={handleSkipLogin}
+                className="text-sm text-gray-400 hover:text-gray-300 underline"
+              >
+                Skip and continue as guest
               </button>
             </div>
           </form>
