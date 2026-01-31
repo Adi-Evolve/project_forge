@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
 // This file is deprecated. All IPFS/Pinata logic removed. Use ImgBB or Supabase Storage instead.
 interface PinataResponse {
   IpfsHash: string;

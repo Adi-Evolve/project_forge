@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 // import { enhancedSupabaseService } from './enhancedSupabase.js';
 import { advancedContractService } from './advancedContracts';

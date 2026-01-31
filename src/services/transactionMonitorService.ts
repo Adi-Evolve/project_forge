@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { contributionsService } from './contributionsService';
 import { web3Service } from './web3';
